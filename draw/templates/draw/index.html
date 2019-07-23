@@ -28,8 +28,75 @@
     // getting the URL (you may want to use for Exercise 3)
     var url = window.location.href;
 
-    // var socket = new WebSocket(
-    //     'wss://<your url here>/ws/draw');
+    var socket = new WebSocket(
+        'wss://p3-websockets-bobcao3-bobcaocheng619338.codeanyapp.com/ws/draw');
+  
+    function uuidv4() {
+      return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+      )
+    }
+  
+    function getRandomColor() {
+      var letters = '0123456789ABCDEF';
+      var color = '#';
+      for (var i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    }
+  
+    var uuid = uuidv4();
+    var color = getRandomColor();
+  
+    var urlParams = new URLSearchParams(window.location.search);
+  
+    // triggered when receiving a message from the server
+    socket.onmessage = function(receivedMessage) {
+      // do something when you receive a message
+      event = JSON.parse(receivedMessage.data)
+      
+      if (event.uid == uuid || urlParams.get('size') == "small") return;
+
+      if (event.type == 'mousedown') {
+        mouseDownEvent(event)
+      } else if (event.type == 'mousemove') {
+        mouseMoveEvent(event)
+      }
+    };
+
+    // use when sending a message to the server
+    // to be broadcasted to all clients, please add a delay
+    //socket.send(message);
+
+    // notify console if socket closes unexpectedly
+    socket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+  
+    tool.onMouseDown = function(event) {
+        ev = {"type":"mousedown", "x":event.point.x, "y":event.point.y, "uid":uuid, "color":color};
+        mouseDownEvent(ev);
+        socket.send(JSON.stringify(ev));
+    }
+
+    tool.onMouseDrag = function(event) {
+        ev = {"type":"mousemove", "x":event.point.x, "y":event.point.y, "uid":uuid};
+        mouseMoveEvent(ev);
+        socket.send(JSON.stringify(ev));
+    }
+    
+    function mouseDownEvent(ev) {
+        // Create a new path every time the mouse is clicked
+        path = new paper.Path();
+        path.add(new paper.Point(ev.x, ev.y));
+        path.strokeColor = ev.color;
+    }
+  
+    function mouseMoveEvent(ev) {
+        // Add a point to the path every time the mouse is dragged
+        path.add(new paper.Point(ev.x, ev.y));
+    }
 
 
 </script>
