@@ -1,0 +1,139 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>On the Small Screen</title>
+
+    <script type="text/javascript" src="{% static 'draw/vendor/jquery/jquery-3.3.1.min.js' %}"></script>
+
+    <!-- UIkit CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/css/uikit.min.css" />
+
+    <!-- UIkit JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uikit/3.1.6/js/uikit-icons.min.js"></script>
+  
+    <style type="text/css">
+      body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+        min-height: 100vh;
+      }
+    </style>
+
+</head>
+<body class="uk-light uk-background-secondary">
+    <div class="uk-container">
+        <form class="uk-margin-top">
+            <fieldset class="uk-fieldset">
+
+                <legend class="uk-legend">Submit a Question</legend>
+
+                <div class="uk-margin">
+                    <div class="uk-grid-small" uk-grid>
+                        <div class="uk-width-1-1">
+                            <input class="uk-input" type="text" id="title" placeholder="Title">                        
+                        </div>
+                        <div class="uk-width-1-1">
+                            <input class="uk-input" type="text" id="name" placeholder="Your Name">                        
+                        </div>
+                        <div class="uk-width-1-2">
+                            <input class="uk-input" type="text" id="sid" placeholder="Your Student ID">
+                        </div>
+                        <div class="uk-width-1-2">
+                            <input class="uk-input" type="text" id="checkoffnum" placeholder="Your Checkoff Number">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="uk-margin">
+                    <select class="uk-select" id="labselect">
+                        <option value="1">Lab 01</option>
+                        <option value="2">Lab 02</option>
+                    </select>
+                </div>
+
+                <div class="uk-margin">
+                    <textarea class="uk-textarea" rows="5" placeholder="Question Description" id="text"></textarea>
+                </div>
+              
+                <div class="uk-margin">
+                    <textarea class="uk-textarea" rows="5" placeholder="Answer" id="ans"></textarea>
+                </div>
+              
+                <a class="uk-button uk-button-default" id="submit">Submit</a>
+
+            </fieldset>
+        </form>
+    </div>
+</body>
+<script>
+    var url = window.location.href;
+
+    var socket = new WebSocket(
+        'wss://p3-websockets-bobcao3-bobcaocheng619338.codeanyapp.com/ws/draw');
+  
+    function uuidv4() {
+      return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+      )
+    }
+  
+    function getRandomColor() {
+      var letters = '0123456789ABCDEF';
+      var color = '#';
+      for (var i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    }
+  
+    var uuid = uuidv4();
+  
+    var urlParams = new URLSearchParams(window.location.search);
+  
+    // triggered when receiving a message from the server
+    socket.onmessage = function(receivedMessage) {
+      // do something when you receive a message
+      event = JSON.parse(receivedMessage.data)
+      
+      console.log(event)
+      
+      if (event.type == "notify" && event.uid == uuid) {
+        alert(event.msg)
+      }
+      
+    };
+
+    // use when sending a message to the server
+    // to be broadcasted to all clients, please add a delay
+    //socket.send(message);
+
+    // notify console if socket closes unexpectedly
+    socket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+  
+    $("#submit").click((e) => {
+        var e = document.getElementById("labselect");
+        var lab = e.options[e.selectedIndex].value;
+        data = {
+            "senderUid":   uuid,
+            "title":       $("#title").val(),
+            "name":        $("#name").val(),
+            "sid":         $("#sid").val(),
+            "checkoffnum": $("#checkoffnum").val(),
+            "lab":         lab,
+            "text":        $("#text").val(),
+            "ans":         $("#ans").val(),
+            "type":        "newQuestion"
+        }
+        socket.send(JSON.stringify(data));
+    });
+
+</script>
+</html>
